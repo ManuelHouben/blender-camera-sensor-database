@@ -1,0 +1,22 @@
+schema_version = "1.0.0"
+
+id = "camera_sensor_database"
+version = "1.0.0"
+name = "Camera Sensor Database"
+tagline = "Provides a database of camera sensors to choose from in Blender."
+maintainer = "Manuel Houben"
+type = "add-on"
+
+website = "https://github.com/ManuelHouben/blender-camera-sensor-database"
+
+tags = ["Camera", "Presets"]
+
+blender_version_min = "4.2.0"
+
+license = [
+  "SPDX:GPL-3.0-or-later",
+]
+
+[permissions]
+network = "To download the latest sensor database"
+files = "To save the sensor database locally"

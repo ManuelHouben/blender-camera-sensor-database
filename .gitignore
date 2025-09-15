@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Blender
+*.blend1
+*.blend2
+
+# Build artifacts
+*.zip
