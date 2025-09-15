@@ -11,6 +11,7 @@ API_URL = "https://api.github.com/repos/EmberLightVFX/Camera-Sensor-Database/con
 
 # --- Global Data ---
 SENSOR_DATA = {}
+_update_checked_this_session = False
 
 # --- Helper Functions ---
 def get_sensors_file_path():
@@ -360,6 +361,11 @@ def run_first_time_setup():
 
 def check_for_update_on_startup():
     """Timer function to check for updates on startup if enabled."""
+    global _update_checked_this_session
+    if _update_checked_this_session:
+        return None
+    _update_checked_this_session = True
+
     try:
         prefs = bpy.context.preferences.addons[__package__].preferences
         if prefs.auto_update_on_startup:

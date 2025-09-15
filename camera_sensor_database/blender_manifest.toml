@@ -3,13 +3,13 @@ schema_version = "1.0.0"
 id = "camera_sensor_database"
 version = "1.0.0"
 name = "Camera Sensor Database"
-tagline = "Provides a database of camera sensors to choose from in Blender."
+tagline = "Provides a database of camera sensors to choose from in Blender"
 maintainer = "Manuel Houben"
 type = "add-on"
 
 website = "https://github.com/ManuelHouben/blender-camera-sensor-database"
 
-tags = ["Camera", "Presets"]
+tags = ["Camera", "User Interface"]
 
 blender_version_min = "4.2.0"
 
