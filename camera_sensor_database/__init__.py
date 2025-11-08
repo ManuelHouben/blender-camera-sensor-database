@@ -11,7 +11,6 @@ API_URL = "https://api.github.com/repos/EmberLightVFX/Camera-Sensor-Database/con
 
 # --- Global Data ---
 SENSOR_DATA = {}
-_update_checked_this_session = False
 
 # --- Helper Functions ---
 def get_sensors_file_path():
@@ -144,13 +143,6 @@ class CSD_OT_CheckForUpdate(bpy.types.Operator):
     bl_idname = "csd.check_for_update"
     bl_label = "Check for Update"
 
-    auto_download: BoolProperty(
-        name="Auto Download",
-        description="Automatically download if an update is found",
-        default=False,
-        options={'HIDDEN'}
-    )
-
     def execute(self, context):
         prefs = context.preferences.addons[__package__].preferences
         
@@ -170,10 +162,6 @@ class CSD_OT_CheckForUpdate(bpy.types.Operator):
                 if remote_sha and remote_sha != prefs.remote_sha:
                     prefs.update_available = True
                     self.report({'INFO'}, "An update for the sensor database is available.")
-
-                    if self.auto_download:
-                        self.report({'INFO'}, "Automatic update enabled, downloading now...")
-                        bpy.ops.csd.update_sensors()
                 else:
                     prefs.update_available = False
                     self.report({'INFO'}, "Sensor database is up to date.")
@@ -226,41 +214,6 @@ class CSD_OT_UpdateSensors(bpy.types.Operator):
             return {'CANCELLED'}
 
 
-class CSD_OT_AskForAutoUpdate(bpy.types.Operator):
-    """Asks the user if they want to enable automatic updates on startup."""
-    bl_idname = "csd.ask_for_auto_update"
-    bl_label = "Camera Sensor Database: Automatic Updates"
-    bl_options = {'REGISTER', 'INTERNAL'}
-
-    enable: BoolProperty(
-        name="Enable automatic update check on startup",
-        default=True
-    )
-
-    def execute(self, context):
-        prefs = context.preferences.addons[__package__].preferences
-        prefs.auto_update_on_startup = self.enable
-        prefs.first_run = False
-        self.report({'INFO'}, f"Automatic update check on startup: {'Enabled' if self.enable else 'Disabled'}")
-        
-        if prefs.auto_update_on_startup:
-            bpy.ops.csd.check_for_update()
-            
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self)
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Welcome to the Camera Sensor Database addon!")
-        col = layout.column()
-        col.label(text="Do you want to check for updates")
-        col.label(text="automatically on startup?")
-        layout.separator()
-        layout.prop(self, "enable")
-
-
 # --- Add-on Preferences ---
 class CSD_AddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
@@ -269,19 +222,10 @@ class CSD_AddonPreferences(bpy.types.AddonPreferences):
     last_checked: StringProperty(name="Last Checked", default="Never")
     update_available: BoolProperty(name="Update Available", default=False)
 
-    first_run: BoolProperty(default=True)
-    auto_update_on_startup: BoolProperty(
-        name="Check for Updates on Startup",
-        description="Automatically check for a new sensor database when Blender starts",
-        default=True
-    )
-
     def draw(self, context):
         layout = self.layout
         box = layout.box()
         box.label(text="Sensor Database")
-        
-        box.prop(self, "auto_update_on_startup")
         
         row = box.row()
         row.label(text=f"Last Checked: {self.last_checked}")
@@ -343,36 +287,10 @@ classes = (
     CSD_OT_ApplyResolution,
     CSD_OT_CheckForUpdate,
     CSD_OT_UpdateSensors,
-    CSD_OT_AskForAutoUpdate,
     CSD_AddonPreferences,
     CSD_SensorProperties,
     CSD_PT_MainPanel,
 )
-
-def run_first_time_setup():
-    """Timer function to ask user about auto updates on first run."""
-    try:
-        prefs = bpy.context.preferences.addons[__package__].preferences
-        if prefs.first_run:
-            bpy.ops.csd.ask_for_auto_update('INVOKE_DEFAULT')
-    except (KeyError, AttributeError):
-        pass # Addon might be in a weird state during startup/shutdown
-    return None
-
-def check_for_update_on_startup():
-    """Timer function to check for updates on startup if enabled."""
-    global _update_checked_this_session
-    if _update_checked_this_session:
-        return None
-    _update_checked_this_session = True
-
-    try:
-        prefs = bpy.context.preferences.addons[__package__].preferences
-        if prefs.auto_update_on_startup:
-            bpy.ops.csd.check_for_update(auto_download=True)
-    except (KeyError, AttributeError):
-        pass
-    return None
 
 def register():
     for cls in classes:
@@ -381,16 +299,8 @@ def register():
     bpy.types.Scene.csd_sensor_properties = PointerProperty(type=CSD_SensorProperties)
     
     load_sensor_data()
-    
-    bpy.app.timers.register(run_first_time_setup, first_interval=0.1)
-    bpy.app.timers.register(check_for_update_on_startup, first_interval=5)
 
 def unregister():
-    if bpy.app.timers.is_registered(check_for_update_on_startup):
-        bpy.app.timers.unregister(check_for_update_on_startup)
-    if bpy.app.timers.is_registered(run_first_time_setup):
-        bpy.app.timers.unregister(run_first_time_setup)
-        
     del bpy.types.Scene.csd_sensor_properties
         
     for cls in reversed(classes):
